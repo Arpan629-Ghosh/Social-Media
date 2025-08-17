@@ -1,7 +1,5 @@
 import { Link } from "react-router";
 
-// Removed TypeScript import and interface
-
 export const PostItem = ({ post }) => {
   return (
     <div className="relative group">

@@ -1,24 +1,34 @@
-import { createContext, useContext, useState, useEffect } from "react";
-import { supabase } from "../supabase-client";
-
-/**
- * @typedef {import('@supabase/supabase-js').User} User
- */
-
-/**
- * @typedef {Object} AuthContextType
- * @property {User|null} user
- * @property {() => void} signInWithGitHub
- * @property {() => void} signOut
- */
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+} from "react"; /*React tools:
+createContext() – lets you share data (like user info) across your app
+useContext() – allows components to read from that shared context
+useState() – stores the current user
+useEffect() – runs when the component mounts */
+import { supabase } from "../supabase-client"; /*also import your configured supabase instance to talk to the backend.*/
 
 // Create the context (initially null)
-const AuthContext = createContext(null);
+const AuthContext =
+  createContext(
+    null
+  ); /* create a new context to store and share the auth state.*/
 
-// AuthProvider component
+/* AuthProvider component
+   This component wraps your entire app (in main.jsx) and:
+   Keeps track of the current user
+   Shares login/logout functions
+   Makes all this available to components like Navbar*/
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-
+  /*What’s going on UseEffect?
+When the app starts, this code:
+Gets the current session from Supabase
+Listens for changes like login/logout
+Updates user state with new info
+🔁 It also cleans up the listener when the component unmounts. */
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
@@ -32,10 +42,13 @@ export const AuthProvider = ({ children }) => {
       listener.subscription.unsubscribe();
     };
   }, []);
+  /*When the user clicks “Sign In with GitHub”, this function runs.
+  It opens a GitHub login popup using Supabase OAuth.*/
   const signInWithGitHub = async () => {
     await supabase.auth.signInWithOAuth({ provider: "github" });
   };
-
+  /*Logs the user out from Supabase.
+  Clears the user state in React. */
   const signOut = async () => {
     await supabase.auth.signOut();
     setUser(null);
@@ -62,7 +75,7 @@ export const AuthProvider = ({ children }) => {
       listener.subscription.unsubscribe();
     };
   }, []);
-
+  /*This shares your user, signInWithGitHub, and signOut with the whole app.*/
   const value = {
     user,
     signInWithGitHub,
@@ -72,10 +85,8 @@ export const AuthProvider = ({ children }) => {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-/**
- * Custom hook to use AuthContext
- * @returns {AuthContextType}
- */
+/*This custom hook makes it easy to access auth in any component (like Navbar).
+Instead of doing useContext(AuthContext) everywhere, you just call useAuth().*/
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
